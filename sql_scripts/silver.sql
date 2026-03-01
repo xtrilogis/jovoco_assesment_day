@@ -2,6 +2,31 @@
 -- TODO: formatieren Groß-/Kleinschreibung
 
 -- TODO: proper deduplication statt nur on conflict?
+create table if not EXISTS silver_date_dimension (
+    date_id int PRIMARY KEY,
+    date DATE,
+    year INT,
+    quarter INT,
+    month INT,
+    week INT,
+    day INT,
+    weekday VARCHAR(20)
+);
+
+insert or ignore into silver_date_dimension
+SELECT
+    DateNum AS date_id,
+    SUBSTR(DateNum,1,4) || '-' ||
+    SUBSTR(DateNum,5,2) || '-' ||
+    SUBSTR(DateNum,7,2) AS date,
+    SUBSTR(DateNum,1,4) AS year,
+    Quarter AS quarter,
+    MonthNum AS month,
+    WeekNum AS week,
+    DayNumOfMonth AS day,
+    DayName AS weekday
+FROM bronze_dates;
+
 create table if not EXISTS silver_customers (
     customer_id INT PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
