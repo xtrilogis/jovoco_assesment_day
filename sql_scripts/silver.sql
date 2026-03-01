@@ -13,6 +13,7 @@ create table if not EXISTS silver_date_dimension (
     weekday VARCHAR(20)
 );
 
+
 insert or ignore into silver_date_dimension
 SELECT
     DateNum AS date_id,
@@ -32,7 +33,8 @@ create table if not EXISTS silver_customers (
     name VARCHAR(150) NOT NULL,
     city VARCHAR(50) ,
     registration_date DATE,
-    type VARCHAR(50)
+  type VARCHAR(50),
+  FOREIGN KEY (registration_date) REFERENCES silver_date_dimension(date)
 );
 
 INSERT INTO silver_customers (
@@ -42,6 +44,7 @@ INSERT INTO silver_customers (
   registration_date,
   type
 )
+WITH formatted_customers AS (
 SELECT
   CAST(CustomerID AS INTEGER) AS customer_id,
   Name AS name,
@@ -59,13 +62,25 @@ SELECT
   END AS registration_date,
   "Type" AS type
 FROM bronze_customers
+)
+SELECT
+  customer_id,
+  name,
+  city,
+  ( 
+      SELECT d.date
+      FROM silver_date_dimension d 
+      WHERE LOWER(TRIM(d.date)) = LOWER(TRIM(c.registration_date))
+      LIMIT 1
+    ) AS registration_date,
+  type
+FROM formatted_customers as c
 WHERE 1=1
 ON CONFLICT(customer_id) DO UPDATE SET
   name = excluded.name,
   city = excluded.city,
   registration_date = excluded.registration_date,
   type = excluded.type;
--- TODO: Mention Update Idea
 
 
 create table if not EXISTS silver_stores (
@@ -138,7 +153,8 @@ create table if not EXISTS silver_orders (
     order_date DATE,
     status VARCHAR(20),
     FOREIGN KEY (customer_id) REFERENCES silver_customers(customer_id),
-    FOREIGN KEY (store_id) REFERENCES silver_stores(store_id)
+  FOREIGN KEY (store_id) REFERENCES silver_stores(store_id),
+  FOREIGN KEY (order_date) REFERENCES silver_date_dimension(date)
 );
 
 INSERT INTO silver_orders (
@@ -191,7 +207,12 @@ matched_orders AS (
       )
     ) AS customer_id,
     o.store_id,
-    o.order_date,
+    ( 
+      SELECT d.date
+      FROM silver_date_dimension d 
+      WHERE LOWER(TRIM(d.date)) = LOWER(TRIM(o.order_date))
+      LIMIT 1
+    ) AS order_date,
     o.status
   FROM normalized_orders o
 )
@@ -232,7 +253,7 @@ WITH mapped_order_items AS (
     CAST("Order" AS INTEGER) AS order_id,
     (
       SELECT p.product_id
-      FROM silver_products p -- TODO: will ich diese Dependency?
+      FROM silver_products p
       WHERE LOWER(TRIM(p.title)) = LOWER(TRIM(boi."Product"))
       LIMIT 1
     ) AS product_id,
