@@ -22,6 +22,7 @@ SELECT
     *
 FROM silver_products;
 
+drop table if exists gold_fact_sales;
 CREATE TABLE if not exists gold_fact_sales (
     item_id INT PRIMARY KEY,
     order_id INT NOT NULL,
