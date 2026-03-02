@@ -23,7 +23,7 @@ SELECT
     WeekNum AS week,
     DayNumOfMonth AS day,
     DayName AS weekday,
-    YearQuaterNum AS year_quarter
+    YearQuarterNum AS year_quarter
 FROM bronze_dates;
 
 create table if not EXISTS silver_customers (
