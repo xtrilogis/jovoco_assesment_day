@@ -1,7 +1,3 @@
--- TODO: Datenfehler abfangen, z.B. fehlende Werte
--- TODO: formatieren Groß-/Kleinschreibung
-
--- TODO: proper deduplication statt nur on conflict?
 create table if not EXISTS silver_date_dimension (
     date_id int PRIMARY KEY,
     date DATE NOT NULL,
@@ -10,7 +6,8 @@ create table if not EXISTS silver_date_dimension (
     month INT NOT NULL,
     week INT NOT NULL,
     day INT NOT NULL,
-    weekday VARCHAR(20)
+    weekday VARCHAR(20),
+    year_quarter VARCHAR(10) NOT NULL
 );
 
 
@@ -25,7 +22,8 @@ SELECT
     MonthNum AS month,
     WeekNum AS week,
     DayNumOfMonth AS day,
-    DayName AS weekday
+    DayName AS weekday,
+    YearQuaterNum AS year_quarter
 FROM bronze_dates;
 
 create table if not EXISTS silver_customers (
