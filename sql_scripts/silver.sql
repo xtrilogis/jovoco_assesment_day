@@ -4,12 +4,12 @@
 -- TODO: proper deduplication statt nur on conflict?
 create table if not EXISTS silver_date_dimension (
     date_id int PRIMARY KEY,
-    date DATE,
-    year INT,
-    quarter INT,
-    month INT,
-    week INT,
-    day INT,
+    date DATE NOT NULL,
+    year INT NOT NULL,
+    quarter INT NOT NULL,
+    month INT NOT NULL,
+    week INT NOT NULL,
+    day INT NOT NULL,
     weekday VARCHAR(20)
 );
 
@@ -33,8 +33,8 @@ create table if not EXISTS silver_customers (
     name VARCHAR(150) NOT NULL,
     city VARCHAR(50) ,
     registration_date DATE,
-  type VARCHAR(50),
-  FOREIGN KEY (registration_date) REFERENCES silver_date_dimension(date)
+    type VARCHAR(50),
+    FOREIGN KEY (registration_date) REFERENCES silver_date_dimension(date)
 );
 
 INSERT INTO silver_customers (
@@ -149,9 +149,9 @@ ON CONFLICT(product_id) DO UPDATE SET
 create table if not EXISTS silver_orders (
     order_id INT PRIMARY KEY,
     customer_id INT NOT NULL,
-    store_id INT,
-    order_date DATE,
-    status VARCHAR(20),
+    store_id INT NOT NULL,
+    order_date DATE NOT NULL,
+    status VARCHAR(20) NOT NULL,
     FOREIGN KEY (customer_id) REFERENCES silver_customers(customer_id),
   FOREIGN KEY (store_id) REFERENCES silver_stores(store_id),
   FOREIGN KEY (order_date) REFERENCES silver_date_dimension(date)
@@ -180,7 +180,9 @@ WITH normalized_orders AS (
         )
       ELSE NULL
     END AS order_date,
-    TRIM("Status") AS status
+    TRIM(
+      UPPER(SUBSTR(TRIM("Status"), 1, 1)) || LOWER(SUBSTR(TRIM("Status"), 2))
+    ) AS status
   FROM bronze_orders
 ),
 matched_orders AS (
@@ -223,7 +225,7 @@ SELECT
   order_date,
   status
 FROM matched_orders
-WHERE customer_id IS NOT NULL
+WHERE customer_id IS NOT NULL and store_id IS NOT NULL and order_date is not null and status is not null
 ON CONFLICT(order_id) DO UPDATE SET
   customer_id = excluded.customer_id,
   store_id = excluded.store_id,
@@ -268,8 +270,7 @@ SELECT
   quantity,
   price
 FROM mapped_order_items
-WHERE 1=1
-  AND item_id IS NOT NULL
+WHERE item_id IS NOT NULL
   AND order_id IS NOT NULL
   AND product_id IS NOT NULL
   AND quantity IS NOT NULL
