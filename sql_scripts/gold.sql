@@ -29,6 +29,7 @@ CREATE TABLE if not exists gold_fact_sales (
     product_id INT NOT NULL,
     store_id INT NOT NULL,
     date_id INT NOT NULL,
+    order_status VARCHAR(20) NOT NULL,
     quantity DECIMAL(10,2),
     price DECIMAL(10,2),
     revenue DECIMAL(10,2),
@@ -46,7 +47,7 @@ SELECT
     i.product_id as product_id,
     o.store_id as store_id,
     d.date_id as date_id,
-    o.status as status,
+    o.status as order_status,
     i.quantity as quantity,
     i.price as price,
     i.quantity * i.price AS revenue
